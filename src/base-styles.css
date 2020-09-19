@@ -1,0 +1,80 @@
+/* Vars */
+:root {
+    --colShade: rgba(0, 0, 0, 0.02);
+    --pink: hsl(348, 100%, 97.5%);
+    --yellow: hsl(60, 100%, 97.5%);
+    --green: hsl(132, 100%, 97.5%);
+    --blue: hsl(204, 100%, 97.5%);
+    --lilac: hsl(276, 100%, 97.5%);
+}
+
+/* Button styles */
+.btn.disabled,
+.btn:disabled {
+    pointer-events: none;
+}
+
+/* Table styles */
+table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+/* Constrain column size */
+thead th:first-child {
+    width: 60%;
+}
+
+/* Table header color & stripe */
+thead th {
+    background: white;
+}
+thead th:nth-child(even) {
+    background: #f7f7f7;
+}
+
+/* Table header styles */
+#header-row > th {
+    position: sticky;
+    top: 0;
+}
+
+th.container {
+    width: auto;
+}
+
+.bottom-row {
+    font-weight: normal;
+    font-size: 0.9rem;
+    height: calc(0.9rem * 1.5);
+}
+
+/**
+   * Table body color & stripe:
+   * THIS IS HARD-CODED AND NEEDS CHANGING IF COLUMNS CHANGE
+   */
+tbody tr *:nth-child(even) {
+    background-color: var(--colShade);
+}
+
+/* Row headers that are not category labels: normal font-weight */
+th[scope='row']:not([colspan]) {
+    font-weight: normal;
+}
+
+/* Colors (used for rows) */
+.pink {
+    background: var(--pink);
+}
+.yellow {
+    background: var(--yellow);
+}
+.green {
+    background: var(--green);
+}
+.blue {
+    background: var(--blue);
+}
+.lilac {
+    background: var(--lilac);
+}
