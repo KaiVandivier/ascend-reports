@@ -6,7 +6,7 @@ module.exports = {
     mode: 'development',
     devtool: 'inline-source-map',
     entry: {
-        index1: './src/index.js',
+        index1: './src/index1.js',
         index2: './src/secondIndex.js',
     },
     output: {
