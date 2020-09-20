@@ -1,0 +1,10 @@
+/**
+   * Table body color & stripe:
+   * Stripe columns 2, 4-6, 10-12
+   * THIS IS HARD-CODED AND NEEDS CHANGING IF COLUMNS CHANGE
+   */
+tbody tr *:nth-child(2),
+tbody tr *:nth-child(n + 4):nth-child(-n + 6),
+tbody tr *:nth-child(n + 10):nth-child(-n + 12) {
+    background-color: var(--colShade);
+}
