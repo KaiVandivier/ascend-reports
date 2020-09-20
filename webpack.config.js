@@ -2,7 +2,7 @@ const path = require('path')
 const { CleanWebpackPlugin } = require('clean-webpack-plugin')
 
 const { ReportBuildPlugin } = require('./report-build-plugin')
-const { reports, getEntries } = require('./config')
+const { reports, getEntries, BUILD_DIR } = require('./config')
 
 module.exports = {
     mode: 'development',
@@ -10,7 +10,7 @@ module.exports = {
     entry: getEntries(reports),
     output: {
         filename: '[name].bundle.js',
-        path: path.resolve(__dirname, 'build'),
+        path: BUILD_DIR,
     },
     plugins: [new CleanWebpackPlugin(), new ReportBuildPlugin()],
     module: {
