@@ -17,26 +17,31 @@ const numberFormat = new Intl.NumberFormat(undefined, {
     maximumFractionDigits: 2,
 })
 
-const { rows, columns } = window;
-
-// Cell-width of table
-const totalColumns =
-    1 +
-    columns.reduce(
-        (sum, column) => sum + (column.subcategories?.length || 1),
-        0
-    )
-
 let state = {
     currentYear: currentYear,
     period: initialPeriod,
     orgUnit: initialOrgUnit,
     numberFormat,
-    totalColumns,
+    rows: null,
+    columns: null,
+    totalColumns: null,
     // Dim. IDs, found by dimension-name lookup:
     dimensionsToQuery: [],
     // Warnings and errors to be displayed in tooltips:
     alerts: [],
+}
+
+// TODO: c'mon, you can do better than this ;)
+function addRowsAndColumnsToState(rows, columns) {
+    // Cell-width of table
+    const totalColumns =
+        1 +
+        columns.reduce(
+            (sum, column) => sum + (column.subcategories?.length || 1),
+            0
+        )
+
+    state = { ...state, rows, columns, totalColumns }
 }
 
 /**
@@ -167,7 +172,7 @@ function populateCellDimensionIds(allDimensions) {
     const dimensionsToQuery = []
 
     // Look up dimension ids by name and add ids to cells
-    rows.forEach(({ cells }) => {
+    state.rows.forEach(({ cells }) => {
         if (!cells) return
 
         cells.forEach(cell => {
@@ -289,7 +294,7 @@ function populateCellValues(analyticsResults) {
     // Use `dimensionId` or `customLogic` to populate `value`
     // Execute in parallel across rows
     return Promise.all(
-        rows.map(async ({ cells }, rowIdx) => {
+        state.rows.map(async ({ cells }, rowIdx) => {
             if (!cells) return // Empty row; return
 
             // Execute (possibly async) cell logic in _series_
@@ -363,7 +368,7 @@ function populateCellValues(analyticsResults) {
 function populateHtmlTableHeader() {
     // Empty cell over row names (Maybe "indicator?")
     $('#header-row').append(`<th scope="col"></th>`)
-    columns.forEach(col => {
+    state.columns.forEach(col => {
         const colspan = col.subcategories ? col.subcategories.length : 1
         const subheadings = col.subcategories
             ? col.subcategories.map(sc => sc.shortName)
@@ -396,7 +401,7 @@ function populateHtmlTableBodyWithValues() {
     $('#loading').hide()
 
     // Set up table body
-    rows.forEach((row, rowIdx) => {
+    state.rows.forEach((row, rowIdx) => {
         // Make new row element
         const newRow = $(
             `<tr
@@ -532,7 +537,7 @@ function exportToCSV() {
     // 1. Make two header rows for column title
     const colHeadersTop = [null]
     const colHeadersBot = [null]
-    const columnHeaders = columns.forEach(column => {
+    const columnHeaders = state.columns.forEach(column => {
         // TODO: Short names?
         // If no subcategories, enter column name on top and null on bottom.
         if (!column.subcategories) {
@@ -553,7 +558,7 @@ function exportToCSV() {
 
     // 2. Map each row; join with newlines
     // 3. Map each cell; join with columns
-    const csvRows = rows
+    const csvRows = state.rows
         .map(row => {
             const formattedName = row.name.replace(/,/g, '')
             if (!row.cells) return formattedName
@@ -744,8 +749,9 @@ function setUpCheckboxForm({ startingYear, maxOrgUnitLevel }) {
  *
  */
 // jQuery(document).ready(function () {
-export function onDocumentReady() {
+export function createTable(rows, columns) {
     // Javascript to be executed after page is loaded here
+    addRowsAndColumnsToState(rows, columns)
     setUpCheckboxForm({ startingYear: 2010, maxOrgUnitLevel: 2 })
     populateHtmlTableHeader()
     getAllDimensions()

@@ -1,4 +1,8 @@
-import { onDocumentReady, greatestOf, uniqueRespondingIUs } from '../../table-engine/table-engine'
+import {
+    createTable,
+    greatestOf,
+    uniqueRespondingIUs,
+} from '../../table-engine/table-engine'
 import {
     colSubcats,
     rowTypes,
@@ -6,15 +10,12 @@ import {
     tooltipTypes,
 } from '../../table-engine/enums'
 
-// Load the table based on rows and columns
-jQuery(document).ready(onDocumentReady)
-
 /**
  * Row and column definitions: Edit these to define the table.
  * See the documentation at https://github.com/KaiVandivier/ascend-mda-report
  * for a guide.
  */
-window.columns = [
+const columns = [
     {
         name: 'Trachoma',
         shortName: 'Trach.',
@@ -59,7 +60,7 @@ window.columns = [
     },
 ]
 
-window.rows = [
+const rows = [
     // Endemicity
     { name: 'Endemicity', type: rowTypes.CATEGORY },
     {
@@ -1153,3 +1154,6 @@ window.rows = [
     },
 ]
 // End row & cell definitions
+
+// Load the table based on rows and columns
+window.jQuery(document).ready(createTable(rows, columns))
