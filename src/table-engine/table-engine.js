@@ -1,3 +1,5 @@
+import { rowTypes, tooltipTypes } from './enums'
+
 /**
  *
  * App state
