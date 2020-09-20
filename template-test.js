@@ -1,66 +1,63 @@
-const template = require('lodash/template')
 const fs = require('fs')
+const path = require('path')
 const async = require('async')
 
-const { reports } = require('./config')
+const {
+    reports,
+    EXTERNAL_IMPORTS_PATH,
+    BASE_STYLES_PATH,
+    LAYOUT_PATH,
+    REPORTS_OUTPUT_DIR,
+    getBuildPath,
+    compiledReportTemplate,
+} = require('./config')
 
-// TODO: Better match these names to input file
-// Also, move to config
-const htmlTemplate = `
-<%= externalImports %>
-
-<style id="base-styles"><%= baseStyles %></style>
-<style id="specific-styles"><%= specificStyles %></style>
-
-<script><%= bundle %></script>
-
-<%= layout %>
-`
-const compiled = template(htmlTemplate)
-
-// TODO:
-// Read generic files: external imports, base styles
-// For each report:
-// - Read specific files: styles, js bundle, template
-// - Create output string using template
-
-// TODO: Make constants of these filenames in config
-// async.parallel(
-//     {
-//         externalImports: cb => fs.readFile('src/external-imports.html', cb),
-//         baseStyles: cb => fs.readFile('src/base-styles.css', cb),
-//         layout: cb => fs.readFile('src/layout.html', cb)
-//     },
-//     (err, files) => {
-//         for (const report in reports) {
-//             readFilesWriteTemplate(reports[report], files)
-//         }
-//     }
-// )
+async.parallel(
+    {
+        externalImports: cb => fs.readFile(EXTERNAL_IMPORTS_PATH, cb),
+        baseStyles: cb => fs.readFile(BASE_STYLES_PATH, cb),
+        layout: cb => fs.readFile(LAYOUT_PATH, cb),
+    },
+    (err, files) => {
+        for (const report in reports) {
+            readFilesWriteTemplate(reports[report], files)
+        }
+    }
+)
 
 function readFilesWriteTemplate(report, files) {
     const { name } = report
-    // TODO: Get specific styles to (using async parallel)
-    // TODO: Point to bundled file
+
     // 1. Read file(s); get data
-    fs.readFile(`src/${name}/${name}.js`, (err, data) => {
-        if (err) throw err
-
-        // 2. Apply file data to compiled template to get string
-        const outputString = compiled({
-            externalImports: files.externalImports,
-            baseStyles: files.baseStyles,
-            specificStyles: 'body { color: blue; }',
-            bundle: data,
-            layout: files.layout,
-        })
-
-        // 3. Write new string to new file
-        fs.writeFile(`build/${name}.html`, outputString, err => {
+    async.parallel(
+        {
+            bundle: cb => fs.readFile(getBuildPath(report), cb),
+            specificStyles: cb =>
+                report.specificStyles
+                    ? fs.readFile(getStylesPath(report), cb)
+                    : cb(null, null),
+        },
+        (err, reportFiles) => {
             if (err) throw err
-            console.log('done!')
-        })
-    })
-}
 
-fs.readFile('not/a/file', console.log)
+            // 2. Apply file data to compiled template to get string
+            const outputString = compiledReportTemplate({
+                externalImports: files.externalImports,
+                baseStyles: files.baseStyles,
+                specificStyles: reportFiles.specificStyles,
+                bundle: reportFiles.bundle,
+                layout: files.layout,
+            })
+
+            // 3. Write new string to new file
+            fs.writeFile(
+                path.resolve(REPORTS_OUTPUT_DIR, `${name}.html`),
+                outputString,
+                err => {
+                    if (err) throw err
+                    console.log(`Compiled report ${name}`)
+                }
+            )
+        }
+    )
+}
