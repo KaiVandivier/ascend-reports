@@ -1,5 +1,7 @@
 import { rowTypes, tooltipTypes } from './enums'
 
+const { $, dhis2 } = window
+
 /**
  *
  * App state
