@@ -16,6 +16,9 @@ const initialOrgUnit = Object.keys(dhis2.report.organisationUnit).length
 const numberFormat = new Intl.NumberFormat(undefined, {
     maximumFractionDigits: 2,
 })
+
+const { rows, columns } = window;
+
 // Cell-width of table
 const totalColumns =
     1 +
