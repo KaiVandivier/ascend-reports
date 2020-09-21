@@ -17,6 +17,7 @@ module.exports = {
             {
                 test: /\.(js)$/,
                 exclude: /node_modules/,
+                // TODO: Add 'eslint-loader' as second parser
                 use: ['babel-loader'],
             },
         ],
