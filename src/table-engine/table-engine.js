@@ -73,8 +73,8 @@ export function uniqueRespondingIUs(cells, options = {}) {
     // This function counts all unique IUs with at least one value in this row
     // 1. Build dimensions list for query url
     const dimensions = cells
-        .filter(cell => cell && cell.dId)
-        .map(cell => cell.dId)
+        .filter(cell => cell && cell.dxId)
+        .map(cell => cell.dxId)
         .join(';')
 
     // 1.1 Figure out period for query filter
@@ -84,7 +84,7 @@ export function uniqueRespondingIUs(cells, options = {}) {
             : state.period
 
     // 2. Query analytics:
-    return $.get('../api/analytics', {
+    return $.get('../api/34/analytics', {
         // Second orgunit dimension is hardcoded to IU level
         dimension: `dx:${dimensions},ou:${state.orgUnit};LEVEL-iGO9aN3ZSSi`,
         filter: `pe:${filterPeriod}`,
@@ -116,11 +116,25 @@ export function uniqueRespondingIUs(cells, options = {}) {
             })
             const numUniqueIUs = uniqueOrgUnits.size
 
+            // Create a tooltip
+            const { rowIdx, idx } = options
+            if (rowIdx && idx) {
+                state.alerts.push({
+                    identifier: 'row-cell',
+                    identifierValue: `${rowIdx}-${idx}`,
+                    tooltipType: tooltipTypes.INFO,
+                    message:
+                        'IUs that participated in multiple MDAs are not double-counted here',
+                })
+            }
+
             return { numUniqueIUs, sumOfValues }
         })
         .catch(err => {
             // Format error for later handling
-            return Promise.reject({ ...err, message: 'Unique IUs error' })
+            const message =
+                'Unique IUs error' + (err.message ? ` - ${err.message}` : '')
+            return Promise.reject({ ...err, message })
         })
 }
 
@@ -133,10 +147,10 @@ function getAllDimensions() {
     // Gets a list of all indicators' and program indicators' names and IDs
     return Promise.all([
         $.get(
-            '../api/programIndicators.json?filter=displayName:like:MDA&paging=false'
+            '../api/34/programIndicators.json?filter=displayName:like:MDA&paging=false'
         ),
         $.get(
-            '../api/indicators.json?filter=displayName:like:MDA&paging=false'
+            '../api/34/indicators.json?filter=displayName:like:MDA&paging=false'
         ),
     ]).then(values => {
         const [{ programIndicators }, { indicators }] = values
@@ -154,6 +168,7 @@ function getAllDimensions() {
                     identifierValue: dimension.displayName,
                     tooltipType: tooltipTypes.WARNING,
                     message: `Duplicate dimension name found: '${dimension.displayName}'. You may not get the data you're looking for if this cell is queried by name.`,
+                    persistAfterTableLoad: true,
                 }
                 state.alerts.push(alert)
 
@@ -171,7 +186,7 @@ function getAllDimensions() {
 }
 
 function populateCellDimensionIds(allDimensions) {
-    // Populates dimensionId (`dId`) on cells based on dimensionName
+    // Populates dimensionId (`dxId`) on cells based on dimensionName
     // Also populates `state.dimensionsToQuery` for analytics query
     const dimensionsToQuery = []
 
@@ -181,9 +196,9 @@ function populateCellDimensionIds(allDimensions) {
 
         cells.forEach(cell => {
             if (!cell) return
-            if (cell.dId) {
+            if (cell.dxId) {
                 // cell already has `dimensionId`; skip ID lookup
-                dimensionsToQuery.push(cell.dId)
+                dimensionsToQuery.push(cell.dxId)
                 return
             }
             if (!cell.dn) return
@@ -203,7 +218,7 @@ function populateCellDimensionIds(allDimensions) {
 
             // Dimension found - add it to list to query and populate cell
             dimensionsToQuery.push(dimensionId)
-            cell.dId = dimensionId
+            cell.dxId = dimensionId
         })
     })
 
@@ -215,7 +230,7 @@ function getAnalyticsData() {
     // Query analytics API for data (with one monolithic query)
     const { dimensionsToQuery, period, orgUnit } = state
 
-    return $.get('../api/analytics', {
+    return $.get('../api/34/analytics', {
         dimension: `dx:${dimensionsToQuery.join(';')}`,
         filter: `ou:${orgUnit},pe:${period}`,
         skipMeta: true,
@@ -257,7 +272,7 @@ function getAnalyticsDataIndividually() {
     return Promise.all(
         dimensionsToQuery.map(dimensionId => {
             // Query individual cell contents
-            return $.get('../api/analytics', {
+            return $.get('../api/34/analytics', {
                 dimension: `dx:${dimensionId},pe:${period}`,
                 filter: `ou:${orgUnit}`,
                 skipMeta: true,
@@ -307,7 +322,7 @@ function populateCellValues(analyticsResults) {
                     return prevTask.then(async () => {
                         if (!cell) return
                         const {
-                            dId: dimensionId,
+                            dxId: dimensionId,
                             customLogic,
                             options,
                             tooltips,
@@ -318,14 +333,13 @@ function populateCellValues(analyticsResults) {
                             multipleYearsSelected()
                         ) {
                             cell.value = 'n/a'
-                            const newTooltip = {
-                                type: tooltipTypes.INFO,
+                            state.alerts.push({
+                                identifier: 'row-cell',
+                                identifierValue: `${rowIdx}-${idx}`,
+                                tooltipType: tooltipTypes.INFO,
                                 message:
                                     'Value is omitted when multiple years are selected',
-                            }
-                            cell.tooltips = tooltips
-                                ? [...tooltips, newTooltip]
-                                : [newTooltip]
+                            })
                             return
                         }
 
@@ -339,7 +353,7 @@ function populateCellValues(analyticsResults) {
                         // Handle cell defined by custom logic
                         if (customLogic) {
                             try {
-                                cell.value = await customLogic(arr, idx)
+                                cell.value = await customLogic(arr, idx, rowIdx)
                             } catch (err) {
                                 // If error in custom logic, create alert
                                 const message = `
@@ -348,8 +362,8 @@ function populateCellValues(analyticsResults) {
                       See console.
                     `
                                 state.alerts.push({
-                                    identifier: 'custom-logic',
-                                    identifierValue: `row-${rowIdx}-idx-${idx}`,
+                                    identifier: 'row-cell',
+                                    identifierValue: `${rowIdx}-${idx}`,
                                     tooltipType: tooltipTypes.ERROR,
                                     message,
                                 })
@@ -370,6 +384,7 @@ function populateCellValues(analyticsResults) {
  *
  */
 function populateHtmlTableHeader() {
+    console.log('in html header - state:', state)
     // Empty cell over row names (Maybe "indicator?")
     $('#header-row').append(`<th scope="col"></th>`)
     state.columns.forEach(col => {
@@ -445,12 +460,12 @@ function addCellsToHtmlRow(htmlRow, row, rowIdx) {
     cells.forEach((cell, idx) => {
         if (!cell) return htmlRow.append('<td></td>')
 
-        const { dn, dId, customLogic, value } = cell
+        const { dn, dxId, customLogic, value } = cell
         const newCell = $(`
         <td
           ${dn ? `data-dimension-name="${dn}"` : ''}
-          ${dId ? `data-dimension-id="${dId}"` : ''}
-          ${customLogic ? `data-custom-logic="row-${rowIdx}-idx-${idx}"` : ''}
+          ${dxId ? `data-dimension-id="${dxId}"` : ''}
+          data-row-cell="${rowIdx}-${idx}"
         ></td>
       `)
 
@@ -490,6 +505,10 @@ function addAlertTooltips() {
     })
 }
 
+function clearAlerts() {
+    state.alerts = state.alerts.filter(alert => alert.persistAfterTableLoad)
+}
+
 /**
  *
  * Load the Table, populate it with data
@@ -508,6 +527,7 @@ function loadTableData() {
         .then(populateCellValues)
         .then(populateHtmlTableBodyWithValues)
         .then(addAlertTooltips)
+        .then(clearAlerts)
         .then(() => {
             $('#downloadCSV').attr('disabled', false)
             $('#downloadCSV').removeClass('disabled')
@@ -649,7 +669,7 @@ function setUpPeriodCheckboxes(startingYear) {
 }
 
 function setUpOrgUnitCheckboxes(maxLevel) {
-    $.get('../api/organisationUnits.json', { maxLevel, paging: false })
+    $.get('../api/34/organisationUnits.json', { maxLevel, paging: false })
         .then(({ organisationUnits: orgUnits }) => {
             if (!orgUnits) return
 
