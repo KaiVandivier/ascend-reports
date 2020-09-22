@@ -617,6 +617,10 @@ function exportToCSV() {
     link.click() // This will download the data file named "mda_report.csv".
 }
 
+function addCsvDownloadListener() {
+    $('#downloadCSV').on('click', exportToCSV)
+}
+
 /**
  *
  * Period & Org Unit selection
@@ -777,6 +781,7 @@ export function createTable(rows, columns) {
     // Javascript to be executed after page is loaded here
     addRowsAndColumnsToState(rows, columns)
     setUpCheckboxForm({ startingYear: 2010, maxOrgUnitLevel: 2 })
+    addCsvDownloadListener()
     populateHtmlTableHeader()
     getAllDimensions()
         .then(populateCellDimensionIds)
