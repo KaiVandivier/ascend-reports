@@ -22,7 +22,7 @@ const numberFormat = new Intl.NumberFormat(undefined, {
 })
 
 let state = {
-    currentYear: currentYear,
+    currentYear,
     period: initialPeriod,
     orgUnit: initialOrgUnit,
     numberFormat,
@@ -54,13 +54,13 @@ function addRowsAndColumnsToState(rows, columns) {
  *
  */
 export function greatestOf(...args) {
-    const nums = args.filter(n => !isNaN(n))
+    const nums = args.filter(n => !Number.isNaN(Number(n)))
     if (!nums.length) return 0
     return Math.max(...nums)
 }
 
 export function sumOf(...args) {
-    const nums = args.filter(n => !isNaN(n))
+    const nums = args.filter(n => !Number.isNaN(Number(n)))
     if (!nums.length) return 0
     return nums.reduce((sum, n) => sum + Number(n), 0)
 }
@@ -93,7 +93,7 @@ export function uniqueRespondingIUs(cells, options = {}) {
         .then(json => {
             // 3. Get unique org units (IUs) with response > 0
             const uniqueOrgUnits = new Map()
-            json.rows.forEach(([dimensionId, orgUnitId, value]) => {
+            json.rows.forEach(([, orgUnitId, value]) => {
                 if (!value) return
 
                 // If this org unit is a duplicate in the list, set value to be the greater
@@ -111,7 +111,7 @@ export function uniqueRespondingIUs(cells, options = {}) {
             // Sum response values of unique IUs
             let sumOfValues = 0
             uniqueOrgUnits.forEach(value => {
-                if (isNaN(value)) return
+                if (Number.isNaN(Number(value))) return
                 sumOfValues += Number(value)
             })
             const numUniqueIUs = uniqueOrgUnits.size
@@ -132,8 +132,9 @@ export function uniqueRespondingIUs(cells, options = {}) {
         })
         .catch(err => {
             // Format error for later handling
-            const message =
-                'Unique IUs error' + (err.message ? ` - ${err.message}` : '')
+            const message = `Unique IUs error${
+                err.message ? ` - ${err.message}` : ''
+            }`
             return Promise.reject({ ...err, message })
         })
 }
@@ -279,7 +280,7 @@ function getAnalyticsDataIndividually() {
             }).then(
                 // If successful, return key-value pair of data
                 json => {
-                    if (!json.rows.length) return
+                    if (!json.rows.length) return null
                     return [dimensionId, json.rows[0][2]]
                 },
                 // If unsuccessful, log error and make key-value pair of id and error message
@@ -314,19 +315,14 @@ function populateCellValues(analyticsResults) {
     // Execute in parallel across rows
     return Promise.all(
         state.rows.map(async ({ cells }, rowIdx) => {
-            if (!cells) return // Empty row; return
+            if (!cells) return null // Empty row; return
 
             // Execute (possibly async) cell logic in _series_
             return cells
                 .reduce((prevTask, cell, idx, arr) => {
                     return prevTask.then(async () => {
                         if (!cell) return
-                        const {
-                            dxId: dimensionId,
-                            customLogic,
-                            options,
-                            tooltips,
-                        } = cell
+                        const { dxId: dimensionId, customLogic, options } = cell
 
                         if (
                             options?.omitIfMultipleYearsSelected &&
@@ -357,10 +353,10 @@ function populateCellValues(analyticsResults) {
                             } catch (err) {
                                 // If error in custom logic, create alert
                                 const message = `
-                      ${err.message || 'Custom logic error'}:
-                      ${err.status || ''} ${err.statusText || ''}.
-                      See console.
-                    `
+                                    ${err.message || 'Custom logic error'}:
+                                    ${err.status || ''} ${err.statusText || ''}.
+                                    See console.
+                                `
                                 state.alerts.push({
                                     identifier: 'row-cell',
                                     identifierValue: `${rowIdx}-${idx}`,
@@ -369,7 +365,6 @@ function populateCellValues(analyticsResults) {
                                 })
                                 console.error(message, err)
                             }
-                            return
                         }
                     })
                 }, Promise.resolve())
@@ -409,7 +404,6 @@ function populateHtmlTableHeader() {
             subheadings.forEach(subheading =>
                 bottomRow.append(`<span class="col">${subheading}</span>`)
             )
-            return
         }
     })
 }
@@ -460,7 +454,7 @@ function addCellsToHtmlRow(htmlRow, row, rowIdx) {
     cells.forEach((cell, idx) => {
         if (!cell) return htmlRow.append('<td></td>')
 
-        const { dn, dxId, customLogic, value } = cell
+        const { dn, dxId, value } = cell
         const newCell = $(`
         <td
           ${dn ? `data-dimension-name="${dn}"` : ''}
@@ -471,7 +465,7 @@ function addCellsToHtmlRow(htmlRow, row, rowIdx) {
 
         // Add value and format number
         if (typeof value !== 'undefined') {
-            const formattedValue = isNaN(value)
+            const formattedValue = Number.isNaN(Number(value))
                 ? value
                 : state.numberFormat.format(Number(value))
             newCell.append(formattedValue)
@@ -549,7 +543,6 @@ function exportToCSV() {
         orgUnit,
         allOrgUnits,
         orgUnitPrettyString,
-        periodPrettyString,
     } = state
     const csvOrgUnit = `Organisation Unit(s):,${
         orgUnitPrettyString || allOrgUnits.get(orgUnit)
@@ -561,7 +554,7 @@ function exportToCSV() {
     // 1. Make two header rows for column title
     const colHeadersTop = [null]
     const colHeadersBot = [null]
-    const columnHeaders = state.columns.forEach(column => {
+    state.columns.forEach(column => {
         // TODO: Short names?
         // If no subcategories, enter column name on top and null on bottom.
         if (!column.subcategories) {
@@ -577,8 +570,9 @@ function exportToCSV() {
             colHeadersBot.push(subcategory.name)
         })
     })
-    const csvHeaders =
-        colHeadersTop.join(',') + '\n' + colHeadersBot.join(',') + '\n'
+    const csvHeaders = `${colHeadersTop.join(',')}\n${colHeadersBot.join(
+        ','
+    )}\n`
 
     // 2. Map each row; join with newlines
     // 3. Map each cell; join with columns
@@ -592,7 +586,7 @@ function exportToCSV() {
                     // If cell is empty or has no value, make empty cell element
                     if (!cell || typeof cell.value === 'undefined') return null
                     const { value } = cell
-                    const formattedValue = isNaN(value)
+                    const formattedValue = Number.isNaN(Number(value))
                         ? value.replace(/,/g, '')
                         : Number(value)
                               .toFixed(2)
@@ -628,10 +622,10 @@ function addCsvDownloadListener() {
  */
 function setUpPeriodCheckboxes(startingYear) {
     // Populate period checkboxes, including "all years"
-    const currentYear = state.currentYear
+    const { currentYear } = state
 
     const allYears = []
-    for (let year = currentYear; year >= startingYear; year--) {
+    for (let year = currentYear; year >= startingYear; year -= 1) {
         allYears.push(year)
     }
     const allYearsString = allYears.join(';')
@@ -647,7 +641,7 @@ function setUpPeriodCheckboxes(startingYear) {
             value="${year}"
             name="period"
             id="${year}"
-            ${year == currentYear ? 'checked' : ''}
+            ${year === currentYear ? 'checked' : ''}
           />
           <label class="form-check-label" for="${year}">
             ${year}
