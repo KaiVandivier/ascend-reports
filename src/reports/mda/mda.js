@@ -1076,4 +1076,6 @@ const rows = [
 // End row & cell definitions
 
 // Load the table based on rows and columns
-window.jQuery(document).ready(() => createTable(rows, columns))
+window
+    .jQuery(document)
+    .ready(() => createTable(rows, columns, { dimensionFilterText: 'MDA' }))

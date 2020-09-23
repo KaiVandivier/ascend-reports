@@ -144,14 +144,14 @@ export function uniqueRespondingIUs(cells, options = {}) {
  * Table logic
  *
  */
-function getAllDimensions() {
-    // Gets a list of all indicators' and program indicators' names and IDs
+function getAllDimensions(filterText) {
+    // Gets a list of indicators and programIndicators to match dimension names to IDs
     return Promise.all([
         $.get(
-            '../api/34/programIndicators.json?filter=displayName:like:MDA&paging=false'
+            `../api/34/programIndicators.json?filter=displayName:ilike:${filterText}&paging=false`
         ),
         $.get(
-            '../api/34/indicators.json?filter=displayName:like:MDA&paging=false'
+            `../api/34/indicators.json?filter=displayName:ilike:${filterText}&paging=false`
         ),
     ]).then(values => {
         const [{ programIndicators }, { indicators }] = values
@@ -771,13 +771,13 @@ function setUpCheckboxForm({ startingYear, maxOrgUnitLevel }) {
  *
  */
 // jQuery(document).ready(function () {
-export function createTable(rows, columns) {
+export function createTable(rows, columns, { dimensionFilterText }) {
     // Javascript to be executed after page is loaded here
     addRowsAndColumnsToState(rows, columns)
     setUpCheckboxForm({ startingYear: 2010, maxOrgUnitLevel: 2 })
     addCsvDownloadListener()
     populateHtmlTableHeader()
-    getAllDimensions()
+    getAllDimensions(dimensionFilterText)
         .then(populateCellDimensionIds)
         .then(loadTableData)
         .catch(console.error)
