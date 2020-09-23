@@ -48,6 +48,11 @@ function addRowsAndColumnsToState(rows, columns) {
     state = { ...state, rows, columns, totalColumns }
 }
 
+function addReportTitleToState(reportTitle) {
+    const csvFilename = reportTitle.toLowerCase().split(' ').join('_')
+    state = { ...state, csvFilename, reportTitle }
+}
+
 /**
  *
  * Custom logic helper functions
@@ -546,6 +551,7 @@ function exportToCSV() {
         orgUnit,
         allOrgUnits,
         orgUnitPrettyString,
+        csvFilename
     } = state
     const csvOrgUnit = `Organisation Unit(s):,${
         orgUnitPrettyString || allOrgUnits.get(orgUnit)
@@ -608,10 +614,10 @@ function exportToCSV() {
     const encodedUri = encodeURI(csvContent)
     const link = document.createElement('a')
     link.setAttribute('href', encodedUri)
-    link.setAttribute('download', 'mda_report.csv')
+    link.setAttribute('download', `${csvFilename}.csv`)
     window.frameElement.parentNode.appendChild(link) // Bypasses chrome sandboxed iframe restrictions
 
-    link.click() // This will download the data file named "mda_report.csv".
+    link.click() // This will download the data file named "${csvFilename}.csv".
 }
 
 function addCsvDownloadListener() {
@@ -784,6 +790,7 @@ export function createTable({
     addRowsAndColumnsToState(rows, columns)
     setUpCheckboxForm({ startingYear: 2010, maxOrgUnitLevel: 2 })
     populateReportTitle(reportTitle)
+    addReportTitleToState(reportTitle)
     addCsvDownloadListener()
     populateHtmlTableHeader()
     getAllDimensions(dimensionFilterText)
