@@ -378,8 +378,11 @@ function populateCellValues(analyticsResults) {
  * HTML Table building
  *
  */
+function populateReportTitle(title) {
+    $('#reportTitle').text(title)
+}
+
 function populateHtmlTableHeader() {
-    console.log('in html header - state:', state)
     // Empty cell over row names (Maybe "indicator?")
     $('#header-row').append(`<th scope="col"></th>`)
     state.columns.forEach(col => {
@@ -771,10 +774,16 @@ function setUpCheckboxForm({ startingYear, maxOrgUnitLevel }) {
  *
  */
 // jQuery(document).ready(function () {
-export function createTable(rows, columns, { dimensionFilterText }) {
+export function createTable({
+    rows,
+    columns,
+    reportTitle,
+    dimensionFilterText,
+}) {
     // Javascript to be executed after page is loaded here
     addRowsAndColumnsToState(rows, columns)
     setUpCheckboxForm({ startingYear: 2010, maxOrgUnitLevel: 2 })
+    populateReportTitle(reportTitle)
     addCsvDownloadListener()
     populateHtmlTableHeader()
     getAllDimensions(dimensionFilterText)
