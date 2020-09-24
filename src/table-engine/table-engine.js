@@ -140,7 +140,9 @@ export function uniqueRespondingIUs(cells, options = {}) {
             const message = `Unique IUs error${
                 err.message ? ` - ${err.message}` : ''
             }`
-            return Promise.reject({ ...err, message })
+            return Promise.reject(
+                Object.assign(new Error(), { ...err, message })
+            )
         })
 }
 
@@ -551,7 +553,7 @@ function exportToCSV() {
         orgUnit,
         allOrgUnits,
         orgUnitPrettyString,
-        csvFilename
+        csvFilename,
     } = state
     const csvOrgUnit = `Organisation Unit(s):,${
         orgUnitPrettyString || allOrgUnits.get(orgUnit)
