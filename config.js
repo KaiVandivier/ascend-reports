@@ -31,6 +31,12 @@ const reports = {
         dir: path.resolve(REPORTS_DIR, 'training'),
         specificStyles: false,
     },
+    'lf-tc-mmdp': {
+        name: 'lf-tc-mmdp',
+        title: 'LF & Trachoma MMDP Summary',
+        dir: path.resolve(REPORTS_DIR, 'lf-tc-mmdp'),
+        specificStyles: false,
+    },
 }
 
 // Helper functions
