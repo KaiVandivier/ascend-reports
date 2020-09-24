@@ -54,9 +54,6 @@ const getEntries = reports => {
     Object.entries(reports).forEach(([key, report]) => {
         entries[key] = getEntryPath(report)
     })
-    // for (const report in reports) {
-    //     entries[report] = getEntryPath(reports[report])
-    // }
     return entries
 }
 
