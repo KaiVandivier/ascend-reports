@@ -5,7 +5,7 @@ const { reports, getEntries, BUILD_DIR } = require('./config')
 
 module.exports = {
     mode: 'development',
-    devtool: 'inline-source-map',
+    devtool: 'eval-source-map',
     entry: getEntries(reports),
     output: {
         filename: '[name].bundle.js',
