@@ -19,6 +19,12 @@ const reports = {
         dir: path.resolve(REPORTS_DIR, 'mda'),
         specificStyles: true,
     },
+    dsa: {
+        name: 'dsa',
+        title: 'DSA Summary',
+        dir: path.resolve(REPORTS_DIR, 'dsa'),
+        specificStyles: false,
+    },
     training: {
         name: 'training',
         title: 'Training Summary',
@@ -37,12 +43,14 @@ const getBuildPath = report =>
     path.resolve(BUILD_DIR, `${report.name}.bundle.js`)
 
 const getEntries = reports => {
-    console.log(reports)
+    console.log('TODO: Automate directory pathfinding')
     const entries = {}
-    for (const report in reports) {
-        console.log(report)
-        entries[report] = getEntryPath(reports[report])
-    }
+    Object.entries(reports).forEach(([key, report]) => {
+        entries[key] = getEntryPath(report)
+    })
+    // for (const report in reports) {
+    //     entries[report] = getEntryPath(reports[report])
+    // }
     return entries
 }
 
@@ -58,7 +66,6 @@ const htmlReportTemplate = `
 <%= layout %>
 `
 const compiledReportTemplate = template(htmlReportTemplate)
-
 
 module.exports = {
     BUILD_DIR,
