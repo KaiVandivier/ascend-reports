@@ -677,7 +677,33 @@ function setUpPeriodCheckboxes(startingYear) {
     `)
 }
 
+function getOrgUnitCheckbox({
+    id,
+    displayName,
+    checked = false,
+    indented = false,
+}) {
+    return `
+        <div class="form-check${indented ? ' ml-3' : ''}">
+            <input
+                class="form-check-input"
+                type="checkbox"
+                value="${id}"
+                name="orgUnit"
+                id="${id}"
+                ${checked ? 'checked' : ''}
+            />
+            <label class="form-check-label" for="${id}">
+                ${displayName}
+            </label>
+        </div>
+    `
+}
+
 function setUpOrgUnitCheckboxes(maxLevel) {
+    // Slight refactor, to look like a tree:
+    // select level 1 orgUnits and get children
+    // render parents; for each parent, render children indented
     $.get('../api/34/organisationUnits.json', { maxLevel, paging: false })
         .then(({ organisationUnits: orgUnits }) => {
             if (!orgUnits) return
@@ -690,21 +716,13 @@ function setUpOrgUnitCheckboxes(maxLevel) {
                 if (idx === 0) state = { ...state, orgUnit: id }
 
                 allOrgUnits.set(id, displayName)
-                orgUnitCheckboxes.append(`
-            <div class="form-check">
-              <input
-                class="form-check-input"
-                type="checkbox"
-                value="${id}"
-                name="orgUnit"
-                id="${id}"
-                ${idx === 0 ? 'checked' : ''}
-              />
-              <label class="form-check-label" for="${id}">
-                ${displayName}
-              </label>
-            </div>
-          `)
+                orgUnitCheckboxes.append(
+                    getOrgUnitCheckbox({
+                        id,
+                        displayName,
+                        checked: idx === 0,
+                    })
+                )
             })
 
             state = { ...state, allOrgUnits }
