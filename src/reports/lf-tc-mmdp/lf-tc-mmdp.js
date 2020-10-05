@@ -22,7 +22,7 @@ const columns = [
 const rows = [
     {
         name:
-            'Number of health care providers providing morbidity management who received training on morbidity management (LF: Lymphoedema, Hydrocele; Trachoma: Trichiasis)',
+            'Number of health care providers providing morbidity management who received training on morbidity management (LF: Lymphoedema, Hydrocele. Trachoma: Trichiasis)',
         type: rowTypes.DATA,
         cells: [
             {
@@ -40,8 +40,7 @@ const rows = [
         type: rowTypes.DATA,
         cells: [
             {
-                dn:
-                    'LFMMDP - Reduction in backlog of MMDP care required per IU',
+                dn: 'LFMMDP - Reduction in backlog of MMDP care required',
             },
             null,
         ],
@@ -84,7 +83,16 @@ const rows = [
         name:
             'Number of facilities in endemic IUs  with > 3 month stock of surgical supplies ',
         type: rowTypes.DATA,
-        cells: [{ value: 'todo' }, { value: 'todo' }],
+        cells: [
+            {
+                dn:
+                    'LFMMDP - Facilities in endemic IUs  with > 3 month stock of surgical supplies',
+            },
+            {
+                dn:
+                    'TCMMDP - Facilities in endemic IUs  with > 3 month stock of surgical supplies',
+            },
+        ],
     },
     {
         name:
@@ -116,7 +124,7 @@ const rows = [
             {
                 dn: 'LFMMDP - Facilities per IU which provide MMDP services',
             },
-            { value: 'todo' },
+            null,
         ],
     },
     {
@@ -148,12 +156,6 @@ const rows = [
                     'TCMMDP - People trained in MMDP care_for lymphoedema management, hydrocelectomy, TT surgery, VL treatment',
             },
         ],
-    },
-    {
-        name:
-            'Support provided to monitor and supervise lymphedema management, hydrocele surgery and VL diagnosis and treatment (y/n)',
-        type: rowTypes.DATA,
-        cells: [{ value: 'todo' }, { value: 'todo' }],
     },
 ]
 // End row & cell definitions
