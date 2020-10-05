@@ -684,7 +684,7 @@ function getOrgUnitCheckbox({
     indented = false,
 }) {
     return `
-        <div class="form-check${indented ? ' ml-3' : ''}">
+        <div class="form-check${indented ? ' ml-4' : ''}">
             <input
                 class="form-check-input"
                 type="checkbox"
@@ -700,18 +700,19 @@ function getOrgUnitCheckbox({
     `
 }
 
-function setUpOrgUnitCheckboxes(maxLevel) {
-    // Slight refactor, to look like a tree:
-    // select level 1 orgUnits and get children
-    // render parents; for each parent, render children indented
-    $.get('../api/34/organisationUnits.json', { maxLevel, paging: false })
+function setUpOrgUnitCheckboxes() {
+    $.get('../api/34/organisationUnits.json', {
+        level: 1,
+        fields: 'id,displayName,children[id,displayName]',
+        paging: false,
+    })
         .then(({ organisationUnits: orgUnits }) => {
             if (!orgUnits) return
 
             const orgUnitCheckboxes = $('#orgUnitCheckboxes')
 
             const allOrgUnits = new Map()
-            orgUnits.forEach(({ id, displayName }, idx) => {
+            orgUnits.forEach(({ id, displayName, children }, idx) => {
                 // Set first orgUnit to state (should be global org unit)
                 if (idx === 0) state = { ...state, orgUnit: id }
 
@@ -723,6 +724,21 @@ function setUpOrgUnitCheckboxes(maxLevel) {
                         checked: idx === 0,
                     })
                 )
+
+                if (!children) return
+                // Sort children & render
+                children
+                    .sort((a, b) => a.displayName.localeCompare(b.displayName))
+                    .forEach(child => {
+                        orgUnitCheckboxes.append(
+                            getOrgUnitCheckbox({
+                                id: child.id,
+                                displayName: child.displayName,
+                                indented: true,
+                            })
+                        )
+                    })
+                orgUnitCheckboxes.append('<div class="spacer mt-1"></div>')
             })
 
             state = { ...state, allOrgUnits }
@@ -786,9 +802,9 @@ function handleFormSubmit(e) {
     $('.dropdown-toggle').dropdown('toggle')
 }
 
-function setUpCheckboxForm({ startingYear, maxOrgUnitLevel }) {
+function setUpCheckboxForm({ startingYear }) {
     setUpPeriodCheckboxes(startingYear)
-    setUpOrgUnitCheckboxes(maxOrgUnitLevel)
+    setUpOrgUnitCheckboxes()
 
     // Use button because forms cannot submit in sandboxed iframes
     $('#updateTable').on('click', handleFormSubmit)
@@ -808,7 +824,7 @@ export function createTable({
 }) {
     // Javascript to be executed after page is loaded here
     addRowsAndColumnsToState(rows, columns)
-    setUpCheckboxForm({ startingYear: 2010, maxOrgUnitLevel: 2 })
+    setUpCheckboxForm({ startingYear: 2010 })
     populateReportTitle(reportTitle)
     addReportTitleToState(reportTitle)
     addCsvDownloadListener()
